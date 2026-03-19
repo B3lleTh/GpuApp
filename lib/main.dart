@@ -27,7 +27,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// AUTH GATE
+// ================= AUTH =================
+
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -48,7 +49,8 @@ class AuthGate extends StatelessWidget {
   }
 }
 
-// LOGIN PROFESIONAL
+// ================= LOGIN =================
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -59,8 +61,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final email = TextEditingController();
   final pass = TextEditingController();
+
   bool isLogin = true;
   bool loading = false;
+  bool obscure = true;
   String error = "";
 
   Future submit() async {
@@ -73,7 +77,9 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       if (email.text.isEmpty || pass.text.isEmpty) {
-        error = "Completa todos los campos";
+        error = "Complete all fields";
+      } else if (pass.text.length < 6) {
+        error = "Password must be at least 6 characters";
       } else if (isLogin) {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: email.text.trim(),
@@ -86,7 +92,7 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     } catch (e) {
-      error = "Credenciales inválidas";
+      error = "Invalid credentials";
     }
 
     setState(() => loading = false);
@@ -99,8 +105,6 @@ class _LoginPageState extends State<LoginPage> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFF1E293B), Color(0xFF020617)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
           ),
         ),
         child: Center(
@@ -110,22 +114,34 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    "StudyFlow",
-                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                  ),
+                  const Text("StudyFlow",
+                      style:
+                          TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 25),
+
                   TextField(
                     controller: email,
                     decoration: const InputDecoration(labelText: "Email"),
                   ),
+
                   const SizedBox(height: 12),
+
                   TextField(
                     controller: pass,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: "Password"),
+                    obscureText: obscure,
+                    decoration: InputDecoration(
+                      labelText: "Password",
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                            obscure ? Icons.visibility : Icons.visibility_off),
+                        onPressed: () =>
+                            setState(() => obscure = !obscure),
+                      ),
+                    ),
                   ),
+
                   const SizedBox(height: 25),
+
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -136,26 +152,19 @@ class _LoginPageState extends State<LoginPage> {
                               width: 20,
                               child: CircularProgressIndicator(),
                             )
-                          : Text(isLogin ? "Iniciar sesión" : "Crear cuenta"),
+                          : Text(isLogin ? "Login" : "Create Account"),
                     ),
                   ),
-                  const SizedBox(height: 10),
+
                   TextButton(
                     onPressed: () => setState(() => isLogin = !isLogin),
-                    child: Text(
-                      isLogin
-                          ? "¿No tienes cuenta? Regístrate"
-                          : "Ya tengo cuenta",
-                    ),
+                    child: Text(isLogin
+                        ? "No account? Register"
+                        : "Already have an account"),
                   ),
+
                   if (error.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Text(
-                        error,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    ),
+                    Text(error, style: const TextStyle(color: Colors.red)),
                 ],
               ),
             ),
@@ -166,7 +175,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// HOME PROFESIONAL
+// ================= HOME =================
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -183,23 +193,38 @@ class _HomePageState extends State<HomePage> {
     int minutos = h * 60;
     List<Map<String, dynamic>> sesiones = [];
 
-    if (minutos <= 90) {
-      recommendation = "Pomodoro es óptimo";
-      while (minutos >= 25) {
-        sesiones.add({'duracion': 25, 'tipo': 'Pomodoro'});
-        minutos -= 25;
+    if (minutos <= 120) {
+      recommendation = "Pomodoro is optimal";
+
+      while (minutos >= 30) {
+        sesiones.add({
+          'duracion': 25,
+          'descanso': 5,
+          'tipo': 'Pomodoro',
+        });
+        minutos -= 30;
       }
-    } else if (minutos <= 240) {
-      recommendation = "Balance 52/17 ideal";
-      while (minutos >= 52) {
-        sesiones.add({'duracion': 52, 'tipo': '52/17'});
-        minutos -= 52;
+    } else if (minutos <= 300) {
+      recommendation = "52/17 balance is ideal";
+
+      while (minutos >= 69) {
+        sesiones.add({
+          'duracion': 52,
+          'descanso': 17,
+          'tipo': '52/17',
+        });
+        minutos -= 69;
       }
     } else {
-      recommendation = "Deep Work recomendado";
-      while (minutos >= 90) {
-        sesiones.add({'duracion': 90, 'tipo': 'Deep Work'});
-        minutos -= 90;
+      recommendation = "Deep Work recommended";
+
+      while (minutos >= 105) {
+        sesiones.add({
+          'duracion': 90,
+          'descanso': 15,
+          'tipo': 'Deep Work',
+        });
+        minutos -= 105;
       }
     }
 
@@ -210,11 +235,26 @@ class _HomePageState extends State<HomePage> {
     if (loading) return;
 
     int h = int.tryParse(horas.text) ?? 0;
-    if (h <= 0) return;
+    if (h <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Enter valid hours")),
+      );
+      return;
+    }
 
     setState(() => loading = true);
 
     String uid = FirebaseAuth.instance.currentUser!.uid;
+
+    // borrar anteriores
+    var old = await FirebaseFirestore.instance
+        .collection('sesiones')
+        .where('uid', isEqualTo: uid)
+        .get();
+
+    for (var doc in old.docs) {
+      await doc.reference.delete();
+    }
 
     var sesiones = generarSesiones(h);
 
@@ -222,7 +262,11 @@ class _HomePageState extends State<HomePage> {
 
     for (var s in sesiones) {
       var ref = FirebaseFirestore.instance.collection('sesiones').doc();
-      batch.set(ref, {'uid': uid, ...s, 'completado': false});
+      batch.set(ref, {
+        'uid': uid,
+        ...s,
+        'completado': false,
+      });
     }
 
     await batch.commit();
@@ -246,45 +290,31 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             glass(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    "Planifica tu estudio",
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  const SizedBox(height: 12),
                   TextField(
                     controller: horas,
-                    decoration: const InputDecoration(
-                      labelText: "Horas disponibles",
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: loading ? null : generar,
-                    child: loading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(),
-                          )
-                        : const Text("Optimizar sesiones"),
+                    decoration:
+                        const InputDecoration(labelText: "Available hours"),
                   ),
                   const SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: generar,
+                    child: loading
+                        ? const CircularProgressIndicator()
+                        : const Text("Optimize sessions"),
+                  ),
                   if (recommendation.isNotEmpty)
-                    Text(
-                      recommendation,
-                      style: const TextStyle(color: Colors.blueAccent),
-                    ),
+                    Text(recommendation),
                 ],
               ),
             ),
             const SizedBox(height: 20),
+
             Expanded(
               child: StreamBuilder(
                 stream: FirebaseFirestore.instance
@@ -298,26 +328,24 @@ class _HomePageState extends State<HomePage> {
 
                   var docs = snapshot.data!.docs;
 
-                  if (docs.isEmpty) {
-                    return const Center(child: Text("No hay sesiones aún"));
-                  }
-
                   return ListView.separated(
                     itemCount: docs.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 15),
-                    itemBuilder: (context, i) {
-                      return SessionCard(id: docs[i].id, data: docs[i]);
-                    },
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: 15),
+                    itemBuilder: (_, i) =>
+                        SessionCard(id: docs[i].id, data: docs[i]),
                   );
                 },
               ),
-            ),
+            )
           ],
         ),
       ),
     );
   }
 }
+
+// ================= GLASS =================
 
 Widget glass({required Widget child}) {
   return ClipRRect(
@@ -336,6 +364,8 @@ Widget glass({required Widget child}) {
   );
 }
 
+// ================= SESSION CARD =================
+
 class SessionCard extends StatefulWidget {
   final String id;
   final dynamic data;
@@ -350,16 +380,38 @@ class _SessionCardState extends State<SessionCard> {
   int seconds = 0;
   Timer? timer;
   bool running = false;
+  bool isBreak = false;
+
+  int get duracion => widget.data['duracion'];
+  int get descanso => widget.data['descanso'];
 
   void start() {
     if (running) return;
-    running = true;
-    seconds = widget.data['duracion'] * 60;
 
+    running = true;
+    isBreak = false;
+    seconds = duracion * 60;
+
+    runTimer();
+  }
+
+  void runTimer() {
     timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (seconds == 0) {
-        t.cancel();
-        running = false;
+        if (!isBreak) {
+          setState(() {
+            isBreak = true;
+            seconds = descanso * 60;
+          });
+        } else {
+          t.cancel();
+          running = false;
+
+          FirebaseFirestore.instance
+              .collection('sesiones')
+              .doc(widget.id)
+              .update({'completado': true});
+        }
       } else {
         setState(() => seconds--);
       }
@@ -379,15 +431,23 @@ class _SessionCardState extends State<SessionCard> {
     return glass(
       child: Column(
         children: [
-          Text(widget.data['tipo'], style: const TextStyle(fontSize: 16)),
-          const SizedBox(height: 5),
-          Text("${widget.data['duracion']} min"),
-          const SizedBox(height: 10),
+          Text(widget.data['tipo']),
+          Text("${duracion} min / ${descanso} break"),
+
           Text(
-            seconds > 0 ? "${min}:${sec.toString().padLeft(2, '0')}" : "Ready",
-            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            isBreak ? "Break Time" : "Study Session",
+            style: TextStyle(
+              color: isBreak ? Colors.blue : Colors.green,
+            ),
           ),
-          const SizedBox(height: 10),
+
+          Text(
+            seconds > 0
+                ? "$min:${sec.toString().padLeft(2, '0')}"
+                : "Ready",
+            style: const TextStyle(fontSize: 32),
+          ),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
