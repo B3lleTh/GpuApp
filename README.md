@@ -1,4 +1,4 @@
-# 🚀 StudyFlow | Ultra Pro Edition
+# 🚀 GPU | StudyFlow
 
 ![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Firebase-039BE5?style=for-the-badge&logo=Firebase&logoColor=white)
