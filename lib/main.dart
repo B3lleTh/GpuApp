@@ -1,4 +1,4 @@
-// ULTRA PRO VERSION - FULL CRUD + GLASS UI + ANIMATED TIMER + VALIDATIONS
+// PRO LEVEL 3 - SMART ROUTE + ANIMATIONS + VISUAL SCHEDULE
 
 import 'dart:async';
 import 'dart:ui';
@@ -25,14 +25,12 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF0B0F1A),
-        useMaterial3: true,
       ),
       home: const AuthGate(),
     );
   }
 }
 
-// AUTH
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -51,7 +49,6 @@ class AuthGate extends StatelessWidget {
   }
 }
 
-// LOGIN
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -100,37 +97,20 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
         child: Center(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(30),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Container(
-                padding: const EdgeInsets.all(25),
-                margin: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text("StudyFlow", style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 20),
-                    TextField(controller: email, decoration: const InputDecoration(labelText: "Email")),
-                    const SizedBox(height: 10),
-                    TextField(controller: pass, obscureText: true, decoration: const InputDecoration(labelText: "Password")),
-                    const SizedBox(height: 20),
-                    ElevatedButton(onPressed: submit, child: Text(isLogin ? "Login" : "Crear cuenta")),
-                    TextButton(onPressed: () => setState(() => isLogin = !isLogin), child: Text(isLogin ? "Crear cuenta" : "Ya tengo cuenta")),
-                    if (error.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: Text(error, style: const TextStyle(color: Colors.red)),
-                      )
-                  ],
-                ),
-              ),
+          child: glassContainer(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text("StudyFlow", style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                TextField(controller: email, decoration: const InputDecoration(labelText: "Email")),
+                const SizedBox(height: 10),
+                TextField(controller: pass, obscureText: true, decoration: const InputDecoration(labelText: "Password")),
+                const SizedBox(height: 20),
+                ElevatedButton(onPressed: submit, child: Text(isLogin ? "Login" : "Crear cuenta")),
+                TextButton(onPressed: () => setState(() => isLogin = !isLogin), child: Text(isLogin ? "Crear cuenta" : "Ya tengo cuenta")),
+                if (error.isNotEmpty) Text(error, style: const TextStyle(color: Colors.red)),
+              ],
             ),
           ),
         ),
@@ -139,7 +119,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// HOME
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -149,39 +128,36 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final horas = TextEditingController();
-  String metodo = "pomodoro";
-  String error = "";
+  bool loading = false;
+  String recommendation = "";
 
   List<Map<String, dynamic>> generarSesiones(int h) {
-    List<Map<String, dynamic>> sesiones = [];
     int minutos = h * 60;
-
-    // 🔥 LÓGICA INTELIGENTE AUTOMÁTICA
-    // Decide el mejor método según tiempo disponible
+    List<Map<String, dynamic>> sesiones = [];
 
     if (minutos <= 60) {
-      // Poco tiempo → Pomodoro
+      recommendation = "Mejor método: Pomodoro";
       while (minutos >= 25) {
-        sesiones.add({'duracion': 25, 'descanso': 5, 'tipo': 'Pomodoro', 'completado': false});
+        sesiones.add({'duracion': 25, 'tipo': 'Pomodoro'});
         minutos -= 25;
       }
     } else if (minutos <= 180) {
-      // Tiempo medio → 52/17
+      recommendation = "Mejor método: 52/17";
       while (minutos >= 52) {
-        sesiones.add({'duracion': 52, 'descanso': 17, 'tipo': '52/17', 'completado': false});
+        sesiones.add({'duracion': 52, 'tipo': '52/17'});
         minutos -= 52;
       }
     } else {
-      // Mucho tiempo → combinación inteligente
+      recommendation = "Ruta óptima combinada";
       while (minutos > 0) {
         if (minutos >= 90) {
-          sesiones.add({'duracion': 90, 'descanso': 20, 'tipo': 'Deep Work', 'completado': false});
+          sesiones.add({'duracion': 90, 'tipo': 'Deep Work'});
           minutos -= 90;
         } else if (minutos >= 52) {
-          sesiones.add({'duracion': 52, 'descanso': 17, 'tipo': '52/17', 'completado': false});
+          sesiones.add({'duracion': 52, 'tipo': '52/17'});
           minutos -= 52;
         } else if (minutos >= 25) {
-          sesiones.add({'duracion': 25, 'descanso': 5, 'tipo': 'Pomodoro', 'completado': false});
+          sesiones.add({'duracion': 25, 'tipo': 'Pomodoro'});
           minutos -= 25;
         } else {
           break;
@@ -192,15 +168,12 @@ class _HomePageState extends State<HomePage> {
     return sesiones;
   }
 
-  void guardar() async {
+  Future generar() async {
     int h = int.tryParse(horas.text) ?? 0;
+    if (h <= 0) return;
 
-    if (h <= 0) {
-      setState(() => error = "Ingresa horas válidas");
-      return;
-    }
-
-    setState(() => error = "");
+    setState(() => loading = true);
+    await Future.delayed(const Duration(seconds: 2));
 
     String uid = FirebaseAuth.instance.currentUser!.uid;
     var sesiones = generarSesiones(h);
@@ -209,12 +182,11 @@ class _HomePageState extends State<HomePage> {
       await FirebaseFirestore.instance.collection('sesiones').add({
         'uid': uid,
         ...s,
+        'completado': false,
       });
     }
-  }
 
-  void eliminarSesion(String id) {
-    FirebaseFirestore.instance.collection('sesiones').doc(id).delete();
+    setState(() => loading = false);
   }
 
   @override
@@ -222,12 +194,7 @@ class _HomePageState extends State<HomePage> {
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("StudyFlow"),
-        actions: [
-          IconButton(onPressed: () => FirebaseAuth.instance.signOut(), icon: const Icon(Icons.logout))
-        ],
-      ),
+      appBar: AppBar(title: const Text("StudyFlow")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -236,19 +203,12 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 children: [
                   TextField(controller: horas, decoration: const InputDecoration(labelText: "Horas disponibles")),
-                  DropdownButton<String>(
-                    value: metodo,
-                    isExpanded: true,
-                    items: const [
-                      DropdownMenuItem(value: "pomodoro", child: Text("Pomodoro")),
-                      DropdownMenuItem(value: "52-17", child: Text("52/17")),
-                      DropdownMenuItem(value: "normal", child: Text("Deep Work")),
-                    ],
-                    onChanged: (v) => setState(() => metodo = v!),
-                  ),
                   const SizedBox(height: 10),
-                  ElevatedButton(onPressed: guardar, child: const Text("Generar sesiones")),
-                  if (error.isNotEmpty) Text(error, style: const TextStyle(color: Colors.red)),
+                  ElevatedButton(onPressed: generar, child: const Text("Calcular mejor ruta")),
+                  const SizedBox(height: 10),
+                  if (loading) const CircularProgressIndicator(),
+                  if (recommendation.isNotEmpty)
+                    Text(recommendation, style: const TextStyle(fontSize: 16)),
                 ],
               ),
             ),
@@ -264,11 +224,12 @@ class _HomePageState extends State<HomePage> {
 
                   var docs = snapshot.data!.docs;
 
-                  return ListView.builder(
+                  return ListView.separated(
+                    separatorBuilder: (_, __) => const SizedBox(height: 15),
                     itemCount: docs.length,
                     itemBuilder: (context, i) {
                       var s = docs[i];
-                      return SessionCard(id: s.id, data: s, onDelete: eliminarSesion);
+                      return SessionCard(data: s);
                     },
                   );
                 },
@@ -281,7 +242,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// GLASS CONTAINER
 Widget glassContainer({required Widget child}) {
   return ClipRRect(
     borderRadius: BorderRadius.circular(25),
@@ -292,7 +252,6 @@ Widget glassContainer({required Widget child}) {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.08),
           borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         child: child,
       ),
@@ -300,13 +259,10 @@ Widget glassContainer({required Widget child}) {
   );
 }
 
-// SESSION CARD + TIMER PRO
 class SessionCard extends StatefulWidget {
-  final String id;
   final dynamic data;
-  final Function(String) onDelete;
 
-  const SessionCard({super.key, required this.id, required this.data, required this.onDelete});
+  const SessionCard({super.key, required this.data});
 
   @override
   State<SessionCard> createState() => _SessionCardState();
@@ -337,28 +293,19 @@ class _SessionCardState extends State<SessionCard> {
     return glassContainer(
       child: Column(
         children: [
-          Text("${widget.data['duracion']} min", style: const TextStyle(fontSize: 18)),
+          Text(widget.data['tipo'], style: const TextStyle(fontSize: 16)),
+          const SizedBox(height: 5),
+          Text("${widget.data['duracion']} min"),
           const SizedBox(height: 10),
-          Text(
-            seconds > 0 ? "${min}:${sec.toString().padLeft(2, '0')}" : "Ready",
-            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 500),
+            child: Text(
+              seconds > 0 ? "${min}:${sec.toString().padLeft(2, '0')}" : "Ready",
+              key: ValueKey(seconds),
+              style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+            ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(onPressed: startTimer, icon: const Icon(Icons.play_arrow, size: 30)),
-              IconButton(onPressed: () => widget.onDelete(widget.id), icon: const Icon(Icons.delete, color: Colors.red)),
-              Checkbox(
-                value: widget.data['completado'],
-                onChanged: (v) {
-                  FirebaseFirestore.instance
-                      .collection('sesiones')
-                      .doc(widget.id)
-                      .update({'completado': v});
-                },
-              ),
-            ],
-          )
+          IconButton(onPressed: startTimer, icon: const Icon(Icons.play_arrow, size: 30)),
         ],
       ),
     );
