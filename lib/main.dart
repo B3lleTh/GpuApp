@@ -1,5 +1,3 @@
-// ULTRA PRO VERSION - FULL CRUD + GLASS UI + ANIMATED TIMER + VALIDATIONS
-
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -10,9 +8,7 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -42,7 +38,9 @@ class AuthGate extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
         if (snapshot.hasData) return const HomePage();
         return const LoginPage();
@@ -115,19 +113,41 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text("StudyFlow", style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
+                    const Text(
+                      "GPU | StudyFlow",
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 20),
-                    TextField(controller: email, decoration: const InputDecoration(labelText: "Email")),
+                    TextField(
+                      controller: email,
+                      decoration: const InputDecoration(labelText: "Email"),
+                    ),
                     const SizedBox(height: 10),
-                    TextField(controller: pass, obscureText: true, decoration: const InputDecoration(labelText: "Password")),
+                    TextField(
+                      controller: pass,
+                      obscureText: true,
+                      decoration: const InputDecoration(labelText: "Password"),
+                    ),
                     const SizedBox(height: 20),
-                    ElevatedButton(onPressed: submit, child: Text(isLogin ? "Login" : "Crear cuenta")),
-                    TextButton(onPressed: () => setState(() => isLogin = !isLogin), child: Text(isLogin ? "Crear cuenta" : "Ya tengo cuenta")),
+                    ElevatedButton(
+                      onPressed: submit,
+                      child: Text(isLogin ? "Login" : "Crear cuenta"),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => isLogin = !isLogin),
+                      child: Text(isLogin ? "Crear cuenta" : "Ya tengo cuenta"),
+                    ),
                     if (error.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 10),
-                        child: Text(error, style: const TextStyle(color: Colors.red)),
-                      )
+                        child: Text(
+                          error,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -167,7 +187,11 @@ class _HomePageState extends State<HomePage> {
         minutos -= 52;
       }
     } else {
-      sesiones.add({'duracion': minutos ~/ 60, 'descanso': 0, 'completado': false});
+      sesiones.add({
+        'duracion': minutos ~/ 60,
+        'descanso': 0,
+        'completado': false,
+      });
     }
 
     return sesiones;
@@ -206,7 +230,10 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text("StudyFlow"),
         actions: [
-          IconButton(onPressed: () => FirebaseAuth.instance.signOut(), icon: const Icon(Icons.logout))
+          IconButton(
+            onPressed: () => FirebaseAuth.instance.signOut(),
+            icon: const Icon(Icons.logout),
+          ),
         ],
       ),
       body: Padding(
@@ -216,20 +243,35 @@ class _HomePageState extends State<HomePage> {
             glassContainer(
               child: Column(
                 children: [
-                  TextField(controller: horas, decoration: const InputDecoration(labelText: "Horas disponibles")),
+                  TextField(
+                    controller: horas,
+                    decoration: const InputDecoration(
+                      labelText: "Horas disponibles",
+                    ),
+                  ),
                   DropdownButton<String>(
                     value: metodo,
                     isExpanded: true,
                     items: const [
-                      DropdownMenuItem(value: "pomodoro", child: Text("Pomodoro")),
+                      DropdownMenuItem(
+                        value: "pomodoro",
+                        child: Text("Pomodoro"),
+                      ),
                       DropdownMenuItem(value: "52-17", child: Text("52/17")),
-                      DropdownMenuItem(value: "normal", child: Text("Deep Work")),
+                      DropdownMenuItem(
+                        value: "normal",
+                        child: Text("Deep Work"),
+                      ),
                     ],
                     onChanged: (v) => setState(() => metodo = v!),
                   ),
                   const SizedBox(height: 10),
-                  ElevatedButton(onPressed: guardar, child: const Text("Generar sesiones")),
-                  if (error.isNotEmpty) Text(error, style: const TextStyle(color: Colors.red)),
+                  ElevatedButton(
+                    onPressed: guardar,
+                    child: const Text("Generar sesiones"),
+                  ),
+                  if (error.isNotEmpty)
+                    Text(error, style: const TextStyle(color: Colors.red)),
                 ],
               ),
             ),
@@ -241,7 +283,8 @@ class _HomePageState extends State<HomePage> {
                     .where('uid', isEqualTo: uid)
                     .snapshots(),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                  if (!snapshot.hasData)
+                    return const Center(child: CircularProgressIndicator());
 
                   var docs = snapshot.data!.docs;
 
@@ -249,12 +292,16 @@ class _HomePageState extends State<HomePage> {
                     itemCount: docs.length,
                     itemBuilder: (context, i) {
                       var s = docs[i];
-                      return SessionCard(id: s.id, data: s, onDelete: eliminarSesion);
+                      return SessionCard(
+                        id: s.id,
+                        data: s,
+                        onDelete: eliminarSesion,
+                      );
                     },
                   );
                 },
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -281,13 +328,18 @@ Widget glassContainer({required Widget child}) {
   );
 }
 
-// SESSION CARD + TIMER PRO
+// SESSION CARD + TIMER 
 class SessionCard extends StatefulWidget {
   final String id;
   final dynamic data;
   final Function(String) onDelete;
 
-  const SessionCard({super.key, required this.id, required this.data, required this.onDelete});
+  const SessionCard({
+    super.key,
+    required this.id,
+    required this.data,
+    required this.onDelete,
+  });
 
   @override
   State<SessionCard> createState() => _SessionCardState();
@@ -318,7 +370,10 @@ class _SessionCardState extends State<SessionCard> {
     return glassContainer(
       child: Column(
         children: [
-          Text("${widget.data['duracion']} min", style: const TextStyle(fontSize: 18)),
+          Text(
+            "${widget.data['duracion']} min",
+            style: const TextStyle(fontSize: 18),
+          ),
           const SizedBox(height: 10),
           Text(
             seconds > 0 ? "${min}:${sec.toString().padLeft(2, '0')}" : "Ready",
@@ -327,8 +382,14 @@ class _SessionCardState extends State<SessionCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(onPressed: startTimer, icon: const Icon(Icons.play_arrow, size: 30)),
-              IconButton(onPressed: () => widget.onDelete(widget.id), icon: const Icon(Icons.delete, color: Colors.red)),
+              IconButton(
+                onPressed: startTimer,
+                icon: const Icon(Icons.play_arrow, size: 30),
+              ),
+              IconButton(
+                onPressed: () => widget.onDelete(widget.id),
+                icon: const Icon(Icons.delete, color: Colors.red),
+              ),
               Checkbox(
                 value: widget.data['completado'],
                 onChanged: (v) {
@@ -339,7 +400,7 @@ class _SessionCardState extends State<SessionCard> {
                 },
               ),
             ],
-          )
+          ),
         ],
       ),
     );
