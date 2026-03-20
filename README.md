@@ -4,6 +4,12 @@ A focused study session planner built with Flutter and Firebase. GPA lets you cr
 
 ---
 
+## TEAM - ITIID 4 - MOBILE APP'S DEVELOPMENT
+- Diego Eduardo Velasco Basulto
+- Ibarra Núñez Juan Carlos
+- Andrey Emiliano Mares Estrada
+- Lomeli Ulloa Gilberto
+
 ## Features
 
 - **Adaptive study methods** — automatically selects Pomodoro (≤2h), 52/17 (≤5h), or Deep Work (>5h) based on your available time
