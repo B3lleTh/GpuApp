@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const kBg     = Color(0xFF0D0D14);
 const kSurf   = Color(0xFF13131C);
+const kSurf2  = Color(0xFF1A1A22);
 const kBorder = Color(0xFF1E1E2C);
 const kDim    = Color(0xFF50506A);
 const kHi     = Color(0xFFE8E8F0);
@@ -13,7 +14,7 @@ const kErr    = Color(0xFFB05C72);
 
 const int kMaxPlans = 5;
 const int kMaxHours = 12;
-const int kCD       = 10;
+const int kCD       = 4;
 
 ThemeData buildTheme() => ThemeData(
   brightness: Brightness.dark,

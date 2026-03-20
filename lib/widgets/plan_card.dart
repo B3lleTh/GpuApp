@@ -5,7 +5,7 @@ import '../constants/theme.dart';
 import '../models/plan.dart';
 import 'shared.dart';
 
-enum PlanPhase { idle, study, rest, done }
+enum PlanPhase { idle, study, rest, paused, done }
 
 class PlanCard extends StatefulWidget {
   final Plan plan;
@@ -14,8 +14,9 @@ class PlanCard extends StatefulWidget {
 }
 
 class _PlanCardState extends State<PlanCard> {
-  PlanPhase _phase = PlanPhase.idle;
-  int       _secs  = 0;
+  PlanPhase _phase     = PlanPhase.idle;
+  PlanPhase _prePause  = PlanPhase.study; // fase antes de pausar
+  int       _secs      = 0;
   Timer?    _timer;
 
   Plan get p => widget.plan;
@@ -31,13 +32,38 @@ class _PlanCardState extends State<PlanCard> {
     }
   }
 
+  // Inicia o reanuda desde donde se pausó
   void _start() {
     if (_phase == PlanPhase.study || _phase == PlanPhase.rest || p.isDone) return;
-    setState(() { _phase = PlanPhase.study; _secs = p.studyMin * 60; });
+    if (_phase == PlanPhase.paused) {
+      // Reanudar — restaura la fase anterior y los segundos guardados
+      setState(() => _phase = _prePause);
+    } else {
+      // Inicio fresco del bloque
+      setState(() { _phase = PlanPhase.study; _secs = p.studyMin * 60; });
+    }
     _tick();
   }
 
-  void _pause() { _timer?.cancel(); setState(() { _phase = PlanPhase.idle; _secs = 0; }); }
+  // Pausa — congela el tiempo sin perderlo
+  void _pause() {
+    _timer?.cancel();
+    setState(() {
+      _prePause = _phase; // guarda si estaba en focus o rest
+      _phase    = PlanPhase.paused;
+      // _secs NO se toca — se congela donde estaba
+    });
+  }
+
+  // Reinicia el bloque actual desde cero (no borra completedBlocks)
+  void _reset() {
+    _timer?.cancel();
+    setState(() {
+      _phase = PlanPhase.idle;
+      _secs  = 0;
+      _prePause = PlanPhase.study;
+    });
+  }
 
   void _tick() {
     _timer?.cancel();
@@ -66,26 +92,34 @@ class _PlanCardState extends State<PlanCard> {
 
   @override
   Widget build(BuildContext context) {
-    final fin = p.isDone || _phase == PlanPhase.done;
-    final run = _phase == PlanPhase.study || _phase == PlanPhase.rest;
+    final fin     = p.isDone || _phase == PlanPhase.done;
+    final run     = _phase == PlanPhase.study || _phase == PlanPhase.rest;
+    final paused  = _phase == PlanPhase.paused;
     final m = _secs ~/ 60, s = _secs % 60;
 
-    final Color accent = fin ? kAccent
-        : _phase == PlanPhase.study ? kActive
-        : _phase == PlanPhase.rest  ? kRest
+    final Color accent = fin           ? kAccent
+        : _phase == PlanPhase.study    ? kActive
+        : _phase == PlanPhase.rest     ? kRest
+        : paused                       ? kErr.withOpacity(0.7)
         : kDim;
-    final String label = fin ? 'Done'
-        : _phase == PlanPhase.study ? 'Focus'
-        : _phase == PlanPhase.rest  ? 'Rest'
+
+    final String label = fin           ? 'Done'
+        : _phase == PlanPhase.study    ? 'Focus'
+        : _phase == PlanPhase.rest     ? 'Rest'
+        : paused                       ? 'Paused'
         : 'Idle';
 
-    final pct = run
-        ? _secs / ((_phase == PlanPhase.study ? p.studyMin : p.breakMin) * 60)
+    // El ring usa los segundos congelados cuando está pausado
+    final int secsForPct = paused ? _secs : _secs;
+    final int totalSecs  = (_prePause == PlanPhase.study ? p.studyMin : p.breakMin) * 60;
+    final pct = (run || paused)
+        ? secsForPct / totalSecs
         : (fin ? 1.0 : 0.0);
 
     return SCard(
       radius: 14, padding: const EdgeInsets.all(14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
         // Header
         Row(children: [
           Text(p.method, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kHi)),
@@ -97,41 +131,75 @@ class _PlanCardState extends State<PlanCard> {
           const SizedBox(width: 5),
           Text(label, style: TextStyle(fontSize: 11, color: accent, fontWeight: FontWeight.w500)),
         ]),
+
         const SizedBox(height: 10),
-        // Progress bar
+
+        // Progress bar (bloques completados)
         Row(children: [
           Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(value: p.progress, minHeight: 2,
-                backgroundColor: kBorder, valueColor: AlwaysStoppedAnimation(accent)))),
+                backgroundColor: kBorder,
+                valueColor: AlwaysStoppedAnimation(fin ? kAccent : kActive)))),
           const SizedBox(width: 10),
           Text('${p.completedBlocks}/${p.totalBlocks}',
-              style: TextStyle(fontSize: 10, color: accent, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+              style: TextStyle(fontSize: 10, color: accent,
+                  fontWeight: FontWeight.w600, letterSpacing: 0.3)),
         ]),
+
         const SizedBox(height: 12),
+
         // Timer + actions
         Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+
+          // Ring del bloque actual
           SizedBox(width: 42, height: 42,
-            child: CircularProgressIndicator(value: pct, strokeWidth: 2,
-                backgroundColor: kBorder, valueColor: AlwaysStoppedAnimation(accent))),
+            child: CircularProgressIndicator(
+              value: pct, strokeWidth: 2,
+              backgroundColor: kBorder,
+              valueColor: AlwaysStoppedAnimation(accent))),
           const SizedBox(width: 14),
+
+          // Tiempo y subtítulo
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
-              run ? '${m.toString().padLeft(2,'0')} : ${s.toString().padLeft(2,'0')}'
-                  : fin ? 'Completed' : 'Block ${p.completedBlocks + 1} / ${p.totalBlocks}',
-              style: TextStyle(fontSize: run ? 22 : 13,
-                  fontWeight: run ? FontWeight.w300 : FontWeight.w500,
-                  color: run ? accent : kHi, letterSpacing: run ? 2 : 0)),
+              (run || paused)
+                  ? '${m.toString().padLeft(2,'0')} : ${s.toString().padLeft(2,'0')}'
+                  : fin ? 'Completed'
+                  : 'Block ${p.completedBlocks + 1} / ${p.totalBlocks}',
+              style: TextStyle(
+                fontSize: (run || paused) ? 22 : 13,
+                fontWeight: (run || paused) ? FontWeight.w300 : FontWeight.w500,
+                color: (run || paused) ? accent : kHi,
+                letterSpacing: (run || paused) ? 2 : 0)),
             if (!fin) Text(
-              run ? (_phase == PlanPhase.study ? '${p.studyMin}m focus' : '${p.breakMin}m rest')
+              run
+                  ? (_phase == PlanPhase.study ? '${p.studyMin}m focus' : '${p.breakMin}m rest')
+                  : paused
+                  ? (_prePause == PlanPhase.study ? '${p.studyMin}m focus — paused' : '${p.breakMin}m rest — paused')
                   : '${p.studyMin}m focus  ·  ${p.breakMin}m rest',
               style: const TextStyle(fontSize: 11, color: kDim)),
           ])),
+
+          // Botones de acción
           if (!fin) ...[
-            if (run) ActBtn('Pause', kErr, _pause, icon: Icons.pause_rounded)
-            else     ActBtn(p.completedBlocks == 0 ? 'Start' : 'Resume',
-                            accent, _start, icon: Icons.play_arrow_rounded),
-            const SizedBox(width: 8),
+            if (run) ...[
+              // Corriendo: Pause
+              ActBtn('Pause', kErr, _pause, icon: Icons.pause_rounded),
+              const SizedBox(width: 6),
+            ] else if (paused) ...[
+              // Pausado: Resume + Reset
+              ActBtn('Resume', kActive, _start, icon: Icons.play_arrow_rounded),
+              const SizedBox(width: 6),
+              ActBtn('Reset', kDim, _reset, icon: Icons.refresh_rounded),
+              const SizedBox(width: 6),
+            ] else ...[
+              // Idle: Start o Continue
+              ActBtn(p.completedBlocks == 0 ? 'Start' : 'Continue',
+                  accent, _start, icon: Icons.play_arrow_rounded),
+              const SizedBox(width: 6),
+            ],
           ],
+
           DeleteBtn(onTap: _delete),
         ]),
       ]),

@@ -292,51 +292,46 @@ class _AddBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Durante cooldown: botón activo con ring de progreso y contador
-    // Sin cooldown: botón normal
-    final enabled = canAdd && !cd || canAdd && cd;
-    // Siempre se puede tocar si hay slots — el cooldown es solo visual/informativo
+    // El botón se habilita solo cuando hay slots Y no hay cooldown activo
+    final active = canAdd && !cd;
+    final Color fg = active ? Colors.white.withOpacity(0.9) : kDim;
     return SizedBox(
       width: double.infinity, height: 48,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 180),
         decoration: BoxDecoration(
-          color: canAdd ? kAccent : kBorder,
+          color: active ? kAccent : const Color(0xFF1A1A22),
           borderRadius: BorderRadius.circular(11),
-          boxShadow: canAdd ? [BoxShadow(color: kAccent.withOpacity(0.20),
+          border: Border.all(color: active ? Colors.transparent : kBorder, width: 0.8),
+          boxShadow: active ? [BoxShadow(color: kAccent.withOpacity(0.20),
               blurRadius: 12, offset: const Offset(0, 3))] : [],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(11),
-            onTap: canAdd ? onAdd : null,
+            onTap: active ? onAdd : null,   // bloquea durante cooldown
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 if (cd) ...[
-                  // Ring sutil de countdown
                   SizedBox(width: 14, height: 14,
                     child: CircularProgressIndicator(
                       value: cdN / kCD,
                       strokeWidth: 1.5,
-                      backgroundColor: Colors.white.withOpacity(0.20),
-                      valueColor: AlwaysStoppedAnimation(
-                          canAdd ? Colors.white.withOpacity(0.9) : kDim),
+                      backgroundColor: kBorder,
+                      valueColor: AlwaysStoppedAnimation(kAccent),
                     )),
                   const SizedBox(width: 8),
-                  Text('Add another  ·  ${cdN}s',
+                  Text('${cdN}s  ·  wait a moment',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                          color: canAdd ? Colors.white.withOpacity(0.9) : kDim,
-                          letterSpacing: 0.1)),
+                          color: kDim, letterSpacing: 0.1)),
                 ] else ...[
-                  Icon(Icons.add_rounded, size: 15,
-                      color: canAdd ? Colors.white.withOpacity(0.9) : kDim),
+                  Icon(Icons.add_rounded, size: 15, color: fg),
                   const SizedBox(width: 6),
                   Text('Add session',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                          color: canAdd ? Colors.white.withOpacity(0.9) : kDim,
-                          letterSpacing: 0.1)),
+                          color: fg, letterSpacing: 0.1)),
                 ],
               ]),
             ),
