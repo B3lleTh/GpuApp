@@ -44,15 +44,15 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Secretos y Firebase (opcional pero recomendado)
+# Secrets & Firebase 
 .env*
 android/key.properties
 ios/Runner/GoogleService-Info.plist
 android/app/google-services.json
 
-# Firebase configuration (Contiene tus API Keys)
+# Firebase configuration 
 lib/firebase_options.dart
 
-# Archivos de configuración específicos de plataforma
+# Specific Files Configuration from the Platform
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist

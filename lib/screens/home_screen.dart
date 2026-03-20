@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -96,8 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final active = plans.where((p) => !p.isDone).toList();
         final done   = plans.where((p) =>  p.isDone).toList();
 
-        return Stack(children: [
-          SafeArea(child: Column(children: [
+        return SafeArea(child: Column(children: [
             _AppBar(email: _email),
             Expanded(child: ListView(
               padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
@@ -131,9 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ],
             )),
-          ])),
-          if (_cd) _CDOverlay(n: _cdN),
-        ]);
+          ]));
       },
     ),
   );
@@ -280,11 +276,75 @@ class _InputCard extends StatelessWidget {
         ]),
       ],
       const SizedBox(height: 12),
-      SizedBox(width: double.infinity,
-        child: PBtn(label: cd ? 'Add another  ·  ${cdN}s' : 'Add session',
-            onTap: canAdd ? onAdd : null, loading: false, color: kAccent)),
+      // Cooldown vive en el botón — sin overlay, sin bloquear la pantalla
+      _AddBtn(cd: cd, cdN: cdN, canAdd: canAdd, onAdd: onAdd),
     ]),
   );
+}
+
+// Botón de agregar con cooldown inline
+class _AddBtn extends StatelessWidget {
+  final bool cd, canAdd;
+  final int cdN;
+  final VoidCallback onAdd;
+  const _AddBtn({required this.cd, required this.cdN,
+      required this.canAdd, required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    // Durante cooldown: botón activo con ring de progreso y contador
+    // Sin cooldown: botón normal
+    final enabled = canAdd && !cd || canAdd && cd;
+    // Siempre se puede tocar si hay slots — el cooldown es solo visual/informativo
+    return SizedBox(
+      width: double.infinity, height: 48,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: canAdd ? kAccent : kBorder,
+          borderRadius: BorderRadius.circular(11),
+          boxShadow: canAdd ? [BoxShadow(color: kAccent.withOpacity(0.20),
+              blurRadius: 12, offset: const Offset(0, 3))] : [],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(11),
+            onTap: canAdd ? onAdd : null,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                if (cd) ...[
+                  // Ring sutil de countdown
+                  SizedBox(width: 14, height: 14,
+                    child: CircularProgressIndicator(
+                      value: cdN / kCD,
+                      strokeWidth: 1.5,
+                      backgroundColor: Colors.white.withOpacity(0.20),
+                      valueColor: AlwaysStoppedAnimation(
+                          canAdd ? Colors.white.withOpacity(0.9) : kDim),
+                    )),
+                  const SizedBox(width: 8),
+                  Text('Add another  ·  ${cdN}s',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                          color: canAdd ? Colors.white.withOpacity(0.9) : kDim,
+                          letterSpacing: 0.1)),
+                ] else ...[
+                  Icon(Icons.add_rounded, size: 15,
+                      color: canAdd ? Colors.white.withOpacity(0.9) : kDim),
+                  const SizedBox(width: 6),
+                  Text('Add session',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                          color: canAdd ? Colors.white.withOpacity(0.9) : kDim,
+                          letterSpacing: 0.1)),
+                ],
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
@@ -315,36 +375,5 @@ class _SLabel extends StatelessWidget {
     padding: const EdgeInsets.only(bottom: 8),
     child: Text(text.toUpperCase(), style: const TextStyle(
         fontSize: 10, fontWeight: FontWeight.w600, color: kDim, letterSpacing: 1.2)),
-  );
-}
-
-// ─── Cooldown overlay ─────────────────────────────────────────────────────────
-class _CDOverlay extends StatelessWidget {
-  final int n;
-  const _CDOverlay({required this.n});
-  @override
-  Widget build(BuildContext context) => Positioned.fill(
-    child: ClipRect(
-      child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: ColoredBox(color: Colors.black.withOpacity(0.72),
-          child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-            SizedBox(width: 80, height: 80,
-              child: Stack(alignment: Alignment.center, children: [
-                SizedBox(width: 80, height: 80,
-                  child: CircularProgressIndicator(value: n / kCD,
-                      strokeWidth: 1.5, backgroundColor: kBorder,
-                      valueColor: const AlwaysStoppedAnimation(kAccent))),
-                Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text('$n', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w300,
-                      color: kHi, letterSpacing: -1, height: 1)),
-                  const Text('sec', style: TextStyle(fontSize: 9, color: kDim, letterSpacing: 2)),
-                ]),
-              ])),
-            const SizedBox(height: 18),
-            const Text('Session added', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: kHi)),
-            const SizedBox(height: 2),
-            const Text('You can add another right now', style: TextStyle(fontSize: 11, color: kDim)),
-          ])))),
-    ),
   );
 }

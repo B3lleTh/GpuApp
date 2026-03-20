@@ -84,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     backgroundColor: kBg,
     body: AnimatedBuilder(
       animation: _waveCtrl,
-      builder: (_, __) {
+      builder: (_, _) {
         final t = _waveCtrl.value * 2 * pi;
         return Stack(children: [
           Positioned(top: -80, left: -60, child: Orb(kAccent.withOpacity(0.16), 280)),
