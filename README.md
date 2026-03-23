@@ -1,6 +1,6 @@
-# GPA — Study Planner
+# APM — Study Planner
 
-A focused study session planner built with Flutter and Firebase. GPA lets you create timed study plans based on proven focus techniques, track your progress across sessions, and pick up exactly where you left off.
+A focused study session planner built with Flutter and Firebase. APM lets you create timed study plans based on proven focus techniques, track your progress across sessions, and pick up exactly where you left off.
 
 ---
 
