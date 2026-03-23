@@ -100,6 +100,14 @@ service cloud.firestore {
 
 ---
 
+### Why We Use Firebase
+
+Firebase is used in APM to handle user authentication and store study plans in the cloud.  
+With Cloud Firestore, each user can keep their progress (completed blocks, hours, and method) even after closing the app.  
+It also provides real-time updates across devices and ensures that users can only access their own data, making the app secure and easier to implement.
+
+---
+
 ## Getting Started
 
 ### Prerequisites
