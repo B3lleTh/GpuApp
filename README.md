@@ -7,8 +7,9 @@ A focused study session planner built with Flutter and Firebase. APM lets you cr
 ## TEAM - ITIID 4 - MOBILE APP'S DEVELOPMENT
 - Diego Eduardo Velasco Basulto
 - Ibarra Núñez Juan Carlos
-- Andrey Emiliano Mares Estrada
 - Lomeli Ulloa Gilberto
+- Andrey Emiliano Mares Estrada
+
 
 ## Features
 
