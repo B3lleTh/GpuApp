@@ -161,6 +161,7 @@ cloud_firestore: ^5.0.0
 
 ## Notes
 
+
 - `firebase_options.dart` is intentionally excluded from version control. Each developer must run `flutterfire configure` to generate their own.
 - The `test/` directory can be deleted — the default `widget_test.dart` references `MyApp` which does not exist in this project.
 - Timer state (seconds remaining, current phase) is local to each `PlanCard` widget and resets on hot restart. Block completion progress is always persisted in Firestore.
